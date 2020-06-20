@@ -38,7 +38,6 @@ class FrequencyWidget(
 
     override fun refreshData(v: View) {
         val widgetView = v as GraphWidgetView
-        widgetView.setTitle(habit.name)
         widgetView.setBackgroundAlpha(preferedBackgroundAlpha)
         (widgetView.dataView as FrequencyChart).apply {
             setFirstWeekday(firstWeekday)

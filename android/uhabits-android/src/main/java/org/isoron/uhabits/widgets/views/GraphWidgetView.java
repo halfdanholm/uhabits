@@ -32,8 +32,6 @@ public class GraphWidgetView extends HabitWidgetView
 
     private final View dataView;
 
-    private TextView title;
-
     public GraphWidgetView(Context context, View dataView)
     {
         super(context);
@@ -44,11 +42,6 @@ public class GraphWidgetView extends HabitWidgetView
     public View getDataView()
     {
         return dataView;
-    }
-
-    public void setTitle(String text)
-    {
-        title.setText(text);
     }
 
     @Override
@@ -67,8 +60,5 @@ public class GraphWidgetView extends HabitWidgetView
 
         ViewGroup innerFrame = (ViewGroup) findViewById(R.id.innerFrame);
         innerFrame.addView(dataView);
-
-        title = (TextView) findViewById(R.id.title);
-        title.setVisibility(VISIBLE);
     }
 }

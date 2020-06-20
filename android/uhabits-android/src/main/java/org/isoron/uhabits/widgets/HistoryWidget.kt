@@ -50,7 +50,6 @@ class HistoryWidget(
 
     override fun buildView() =
             GraphWidgetView(context, HistoryChart(context)).apply {
-                setTitle(habit.name)
             }
 
     override fun getDefaultHeight() = 250

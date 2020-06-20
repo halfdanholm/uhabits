@@ -56,7 +56,6 @@ class ScoreWidget(
 
     override fun buildView() =
             GraphWidgetView(context, ScoreChart(context)).apply {
-                setTitle(habit.name)
             }
 
     override fun getDefaultHeight() = 300

@@ -97,6 +97,8 @@ public class HistoryChart extends ScrollableChart
 
     private int firstWeekday = Calendar.SUNDAY;
 
+    private int widgetWidth = 0;
+
     @NonNull
     private Controller controller;
 
@@ -241,6 +243,9 @@ public class HistoryChart extends ScrollableChart
         baseLocation.set(0, 0, columnWidth - squareSpacing,
             columnWidth - squareSpacing);
         baseLocation.offset(getPaddingLeft(), getPaddingTop());
+        float centralize = - (widgetWidth - columnWidth * nColumns) / 2;
+        System.out.println("centralize = " + centralize);
+        baseLocation.offset(centralize, 0);
 
         headerOverflow = 0;
         previousMonth = "";
@@ -255,8 +260,6 @@ public class HistoryChart extends ScrollableChart
             drawColumn(canvas, baseLocation, currentDate, column);
             baseLocation.offset(columnWidth, -columnHeight);
         }
-
-        drawAxis(canvas, baseLocation);
     }
 
     @Override
@@ -274,10 +277,10 @@ public class HistoryChart extends ScrollableChart
                                  int oldHeight)
     {
         if (height < 8) height = 200;
-        float baseSize = height / 8.0f;
+        float baseSize = height / 7.0f;
         setScrollerBucketSize((int) baseSize);
 
-        squareSpacing = dpToPixels(getContext(), 1.0f);
+        squareSpacing = dpToPixels(getContext(), 3.0f);
         float maxTextSize = getDimension(getContext(), R.dimen.regularTextSize);
         float textSize = height * 0.06f;
         textSize = Math.min(textSize, maxTextSize);
@@ -287,14 +290,16 @@ public class HistoryChart extends ScrollableChart
         squareTextOffset = pSquareFg.getFontSpacing() * 0.4f;
         headerTextOffset = pTextHeader.getFontSpacing() * 0.3f;
 
-        float rightLabelWidth = getWeekdayLabelWidth() + headerTextOffset;
-        float horizontalPadding = getPaddingRight() + getPaddingLeft();
+        float rightLabelWidth = 0;
+        float horizontalPadding = 0;
 
         columnWidth = baseSize;
-        columnHeight = 8 * baseSize;
+        columnHeight = 7 * baseSize;
         nColumns =
             (int) ((width - rightLabelWidth - horizontalPadding) / baseSize) +
             1;
+
+        widgetWidth = width;
 
         updateDate();
     }
@@ -316,8 +321,7 @@ public class HistoryChart extends ScrollableChart
                             GregorianCalendar date,
                             int column)
     {
-        drawColumnHeader(canvas, location, date);
-        location.offset(0, columnWidth);
+        location.offset(0, 0);
 
         for (int j = 0; j < 7; j++)
         {
@@ -376,9 +380,6 @@ public class HistoryChart extends ScrollableChart
 
         pSquareFg.setColor(reverseTextColor);
         canvas.drawRect(location, pSquareBg);
-        String text = Integer.toString(date.get(Calendar.DAY_OF_MONTH));
-        canvas.drawText(text, location.centerX(),
-            location.centerY() + squareTextOffset, pSquareFg);
     }
 
     private float getWeekdayLabelWidth()
