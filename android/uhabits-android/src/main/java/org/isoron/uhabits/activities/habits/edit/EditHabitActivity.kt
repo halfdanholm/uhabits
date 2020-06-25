@@ -24,6 +24,7 @@ import android.graphics.*
 import android.os.*
 import android.text.format.*
 import android.view.*
+import android.widget.*
 import androidx.appcompat.app.*
 import androidx.fragment.app.*
 import com.android.datetimepicker.time.*
@@ -36,6 +37,8 @@ import org.isoron.uhabits.core.commands.*
 import org.isoron.uhabits.core.models.*
 import org.isoron.uhabits.databinding.*
 import org.isoron.uhabits.utils.*
+import kotlin.math.*
+
 
 class EditHabitActivity : AppCompatActivity() {
 
@@ -44,6 +47,8 @@ class EditHabitActivity : AppCompatActivity() {
     private lateinit var commandRunner: CommandRunner
 
     var habitId = -1L
+    var habitType = -1
+    var unit = ""
     var paletteColor = 11
     var androidColor = 0
     var freqNum = 1
@@ -66,6 +71,7 @@ class EditHabitActivity : AppCompatActivity() {
             binding.toolbar.title = getString(R.string.edit_habit)
             habitId = intent.getLongExtra("habitId", -1)
             val habit = component.habitList.getById(habitId)!!
+            habitType = habit.type
             paletteColor = habit.color
             freqNum = habit.frequency.numerator
             freqDen = habit.frequency.denominator
@@ -77,10 +83,15 @@ class EditHabitActivity : AppCompatActivity() {
             binding.nameInput.setText(habit.name)
             binding.questionInput.setText(habit.question)
             binding.notesInput.setText(habit.description)
+            binding.unitInput.setText(habit.unit)
+            binding.targetInput.setText(habit.targetValue.toString())
+        } else {
+            habitType = intent.getIntExtra("habitType", Habit.YES_NO_HABIT)
         }
 
         if (state != null) {
             habitId = state.getLong("habitId")
+            habitType = state.getInt("habitType")
             paletteColor = state.getInt("paletteColor")
             freqNum = state.getInt("freqNum")
             freqDen = state.getInt("freqDen")
@@ -90,6 +101,15 @@ class EditHabitActivity : AppCompatActivity() {
         }
 
         updateColors()
+
+        if (habitType == Habit.YES_NO_HABIT) {
+            binding.unitOuterBox.visibility = View.GONE
+            binding.targetOuterBox.visibility = View.GONE
+        } else {
+            binding.nameInput.hint = getString(R.string.measurable_short_example)
+            binding.questionInput.hint = getString(R.string.measurable_question_example)
+            binding.frequencyOuterBox.visibility = View.GONE
+        }
 
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -107,7 +127,7 @@ class EditHabitActivity : AppCompatActivity() {
         }
 
         populateFrequency()
-        binding.frequencyPicker.setOnClickListener {
+        binding.booleanFrequencyPicker.setOnClickListener {
             val dialog = FrequencyPickerDialog(freqNum, freqDen)
             dialog.onFrequencyPicked = { num, den ->
                 freqNum = num
@@ -115,6 +135,24 @@ class EditHabitActivity : AppCompatActivity() {
                 populateFrequency()
             }
             dialog.show(supportFragmentManager, "frequencyPicker")
+        }
+
+        binding.numericalFrequencyPicker.setOnClickListener {
+            val builder = AlertDialog.Builder(this)
+            val arrayAdapter = ArrayAdapter<String>(this, android.R.layout.select_dialog_item)
+            arrayAdapter.add(getString(R.string.every_day))
+            arrayAdapter.add(getString(R.string.every_week))
+            arrayAdapter.add(getString(R.string.every_month))
+            builder.setAdapter(arrayAdapter) { dialog, which ->
+                freqDen = when(which) {
+                    1 -> 7
+                    2 -> 30
+                    else -> 1
+                }
+                populateFrequency()
+                dialog.dismiss()
+            }
+            builder.show()
         }
 
         populateReminder()
@@ -176,9 +214,10 @@ class EditHabitActivity : AppCompatActivity() {
             habit.setReminder(Reminder(reminderHour, reminderMin, reminderDays))
         }
         habit.frequency = Frequency(freqNum, freqDen)
-        habit.unit = ""
-        habit.targetValue = 1.0
-        habit.type = Habit.YES_NO_HABIT
+        habit.targetValue = targetInput.text.toString().toDouble()
+        habit.targetType = Habit.AT_LEAST
+        habit.unit = unitInput.text.trim().toString()
+        habit.type = habitType
 
         val command = if (habitId >= 0) {
             component.editHabitCommandFactory.create(component.habitList, original, habit)
@@ -190,11 +229,22 @@ class EditHabitActivity : AppCompatActivity() {
     }
 
     private fun validate(): Boolean {
+        var isValid = true
         if (nameInput.text.isEmpty()) {
-            nameInput.error = getString(R.string.validation_name_should_not_be_blank)
-            return false
+            nameInput.error = getString(R.string.validation_should_not_be_blank)
+            isValid = false
         }
-        return true
+        if (habitType == Habit.NUMBER_HABIT) {
+            if(unitInput.text.isEmpty()) {
+                unitInput.error = getString(R.string.validation_should_not_be_blank)
+                isValid = false
+            }
+            if(targetInput.text.isEmpty()) {
+                targetInput.error = getString(R.string.validation_should_not_be_blank)
+                isValid = false
+            }
+        }
+        return isValid
     }
 
     private fun populateReminder() {
@@ -213,7 +263,7 @@ class EditHabitActivity : AppCompatActivity() {
     }
 
     private fun populateFrequency() {
-        val label = when {
+        binding.booleanFrequencyPicker.text = when {
             freqNum == 1 && freqDen == 1 -> getString(R.string.every_day)
             freqNum == 1 && freqDen == 7 -> getString(R.string.every_week)
             freqNum == 1 && freqDen > 1 -> getString(R.string.every_x_days, freqDen)
@@ -221,7 +271,12 @@ class EditHabitActivity : AppCompatActivity() {
             freqDen == 31 -> getString(R.string.x_times_per_month, freqNum)
             else -> "Unknown"
         }
-        binding.frequencyPicker.text = label
+        binding.numericalFrequencyPicker.text = when(freqDen) {
+            1 -> getString(R.string.every_day)
+            7 -> getString(R.string.every_week)
+            30 -> getString(R.string.every_month)
+            else -> "Unknown"
+        }
     }
 
     private fun updateColors() {
@@ -238,6 +293,7 @@ class EditHabitActivity : AppCompatActivity() {
         super.onSaveInstanceState(state)
         with(state) {
             putLong("habitId", habitId)
+            putInt("habitType", habitType)
             putInt("paletteColor", paletteColor)
             putInt("androidColor", androidColor)
             putInt("freqNum", freqNum)
