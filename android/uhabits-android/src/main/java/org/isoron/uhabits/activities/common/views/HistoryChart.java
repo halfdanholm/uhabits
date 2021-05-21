@@ -361,6 +361,8 @@ public class HistoryChart extends ScrollableChart
         headerOverflow = Math.max(0, headerOverflow - columnWidth);
     }
 
+    // This is a comment
+
     private void drawSquare(Canvas canvas,
                             RectF location,
                             GregorianCalendar date,

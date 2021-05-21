@@ -171,7 +171,6 @@ public abstract class BaseWidget
         refreshData(view);
 
         if (view.isLayoutRequested()) measureView(view, width, height);
-
         RemoteViews remoteViews =
             new RemoteViews(context.getPackageName(), R.layout.widget_wrapper);
 
